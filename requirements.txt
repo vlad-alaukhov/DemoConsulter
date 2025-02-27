@@ -1,0 +1,14 @@
+distro==1.9.0
+docutils
+filetype==1.2.0
+faiss-cpu==1.8.0
+jiter==0.8.2
+Kivy==2.3.1
+Kivy-Garden==0.1.5
+kivymd==1.2.0
+langchain-openai
+openai
+pillow==11.1.0
+Pygments==2.18.0
+tqdm==4.67.1
+wheel==0.41.2
