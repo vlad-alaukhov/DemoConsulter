@@ -3,19 +3,9 @@ from kivymd.app import MDApp
 from kivymd.uix.label import MDLabel
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.clock import Clock
-from dotenv import load_dotenv
 import datetime
-import requests
 import os
 from rag_processor import DBConstructor
-
-os.environ.clear()
-load_dotenv(".venv/.env")
-
-# получим переменные окружения из .env
-
-# API-key
-api_key = os.environ.get("OPENAI_API_KEY")
 
 KV = '''
 BoxLayout:
@@ -71,11 +61,11 @@ system_prompt = '''
   и своей экспертности, чтобы было понятно и самую суть.
   На все остальные вопросы отвечай по своему усмотрению:
   - ответь на приветствие, если с тобой поздоровались.
-  - можешь перевести тему к нейросотрудникам и системам RAG,
-  - можешь сказать, что вопрос не относится к теме нейросотрудников,
-  - можешь задавать наводящие вопросы, если формулировка вопроса пользователя слабо соотносится с
+  - переведи тему к нейросотрудникам и системам RAG,
+  - скажи, что вопрос не относится к теме нейросотрудников,
+  - задавай наводящие вопросы, если формулировка вопроса пользователя слабо соотносится с
   фрагментом документа,
-  - можешь отшутиться,
+  - отшутись,
   - если попросят представиться, скажи, в чем твоя экспертность.
   Имей в виду, что пользователь может не владеть специальным языком и не ориентироваться в специальных терминах.
   Уровень владения специальным языком считай из формулировки вопроса.
@@ -87,11 +77,10 @@ system_prompt = '''
 
 class ChatApp(MDApp):
     def build(self):
-        api_base = os.environ.get("OPENAI_URL")
-        consulter = DBConstructor()
-        db_folder = "OpenAI_DB_3_large"
+        self.consulter = DBConstructor()
+        db_folder = "DB_Main_multilingual-e5-large"
+        self.receive_db(db_folder)
         #model_name = kwargs["model_name"]
-        self.db = consulter.db_loader_from_openai(db_folder)
         Clock.schedule_interval(self.update_time, 1)
         return Builder.load_string(KV)
 
@@ -108,7 +97,7 @@ class ChatApp(MDApp):
             self.add_message("Вы: " + user_query, "user")
             if verbose: self.add_message("Найденные чанки: " + context, "user")
             user_input.text = ""
-            self.get_response(system_prompt, message)
+            # self.get_response(system_prompt, message)
 
     def add_message(self, text, sender="user"):
         bubble = MDBoxLayout(
@@ -147,37 +136,9 @@ class ChatApp(MDApp):
         current_time = datetime.datetime.now().strftime("%H:%M")
         self.root.ids.status_label.text = f"Текущее время: {current_time}"
 
-    def get_response(self, system, message):
-        # Формируем данные для POST-запроса
-
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": "openai/gpt-4o-mini",
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": message}
-            ],
-            "temperature": 0.3
-        }
-
-        try:
-            # Отправляем POST-запрос к модели
-            response = requests.post("https://api.vsegpt.ru:6010/v1/chat/completions", headers=headers, json=payload)
-            response.raise_for_status()  # Проверка на наличие ошибок в запросе
-
-            # Получаем ответ от модели
-            response_data = response.json()
-            bot_message = response_data['choices'][0]['message']['content']
-
-            # Добавляем ответ бота в чат
-            self.add_message("ChatGPT: " + bot_message, "ChatGPT")
-
-        except Exception as e:
-            print(f"Error occurred: {e}")
-            self.add_message(f"Ошибка {e}: Не удалось получить ответ", "ChatGPT")
+    def receive_db(self, folder):
+        data = self.consulter.faiss_loader(folder)
+        print(data)
 
 
 if __name__ == "__main__":
