@@ -7,6 +7,7 @@ import datetime
 import os
 from rag_processor import DBConstructor
 
+
 KV = '''
 BoxLayout:
     orientation: 'vertical'
